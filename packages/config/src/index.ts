@@ -16,7 +16,8 @@ export const allowedFileExtensions = [
   "image/jpg",
   "image/webp",
 ] as const;
-export const IMAGES_REGEX = /https:\/\/(i.imgur.com|cdn.discordapp.com)\/.+/gi;
+export const IMAGES_REGEX =
+  /https?:\/\/(i\.imgur\.com|cdn\.discordapp\.com|localhost|cdn\.astrode\.dev|cad\.astrode\.dev|[a-zA-Z0-9-]+\.astrode\.dev|([a-zA-Z0-9-]+\.)?vercel-storage\.com|([a-zA-Z0-9-]+\.)+public\.blob\.vercel-storage\.com)\/.+/gi;
 
 export * from "./socket-events";
 export * from "./routes";

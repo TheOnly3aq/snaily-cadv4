@@ -187,7 +187,7 @@ export function validateFile(image: File | string | null, helpers: FormikHelpers
     if (!image.match(IMAGES_REGEX)) {
       throw helpers.setFieldError(
         "image",
-        "Image URL must match https://i.imgur.com/xxxxxx or https://cdn.discordapp.com/attachments/xxxxxx/xxxxxx",
+        "Image URL must be from an allowed domain (imgur.com, discordapp.com, vercel-storage.com, astrode.dev, or localhost)",
       );
     }
 
