@@ -40,6 +40,21 @@ const nextConfig = {
         hostname: "localhost",
         pathname: "**"
       },
+      {
+        protocol: "https",
+        hostname: "cdn.astrode.dev",
+        pathname: "**"
+      },
+      {
+        protocol: "https",
+        hostname: "*.vercel-storage.com",
+        pathname: "**"
+      },
+            {
+        protocol: "https",
+        hostname: "vercel-storage.com",
+        pathname: "**"
+      },
     ]
   }, // end images
   // prettier-enable
