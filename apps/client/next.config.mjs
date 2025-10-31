@@ -50,9 +50,19 @@ const nextConfig = {
         hostname: "*.vercel-storage.com",
         pathname: "**"
       },
-            {
+      {
         protocol: "https",
         hostname: "vercel-storage.com",
+        pathname: "**"
+      },
+      {
+          protocol: "https",
+          hostname: "cad.astrode.dev",
+          pathname: "**"
+      },
+      {
+        protocol: "https",
+        hostname: "*.astrode.dev",
         pathname: "**"
       },
     ]
