@@ -1,7 +1,7 @@
 import { Context, Req } from "@tsed/common";
 import { Controller } from "@tsed/di";
-import { ContentType, Get, Post } from "@tsed/schema";
-import { BodyParams } from "@tsed/platform-params";
+import { ContentType, Delete, Get, Post } from "@tsed/schema";
+import { BodyParams, PathParams } from "@tsed/platform-params";
 import { prisma } from "lib/data/prisma";
 import { Socket } from "services/socket-service";
 import { UseBeforeEach } from "@tsed/platform-middlewares";
@@ -13,6 +13,7 @@ import { getActiveOfficer } from "lib/leo/activeOfficer";
 import { ExtendedBadRequest } from "~/exceptions/extended-bad-request";
 import { validateSchema } from "lib/data/validate-schema";
 import { OFFICER_CHAT_SCHEMA } from "@snailycad/schemas";
+import { NotFound } from "@tsed/exceptions";
 
 const officerChatIncludes = {
   creator: {
@@ -125,6 +126,54 @@ export class OfficerChatController {
     this.socket.emitOfficerChat(normalizedChat);
 
     return normalizedChat;
+  }
+
+  @Delete("/:id")
+  @UsePermissions({
+    permissions: [Permissions.Leo],
+  })
+  async deleteOfficerChatMessage(
+    @Context("user") user: User,
+    @Context() ctx: Context,
+    @Req() request: Req,
+    @PathParams("id") messageId: string,
+  ): Promise<boolean> {
+    const activeOfficer = await getActiveOfficer({ ctx, user, req: request });
+
+    if (!activeOfficer) {
+      throw new ExtendedBadRequest({ message: "mustBeOnDuty" });
+    }
+
+    const message = await (prisma as any).officerChat.findUnique({
+      where: { id: messageId },
+      include: officerChatIncludes,
+    });
+
+    if (!message) {
+      throw new NotFound("messageNotFound");
+    }
+
+    // check if the current officer is the creator of the message
+    const messageCreatorUnit = createChatCreatorUnit(message);
+    if (!messageCreatorUnit) {
+      throw new ExtendedBadRequest({ message: "cannotDeleteMessage" });
+    }
+
+    const currentUnitId = activeOfficer.id;
+    const messageUnitId = messageCreatorUnit.id;
+
+    // verify ownership - must match the current active officer's unit
+    if (currentUnitId !== messageUnitId) {
+      throw new ExtendedBadRequest({ message: "canOnlyDeleteOwnMessages" });
+    }
+
+    await (prisma as any).officerChat.delete({
+      where: { id: messageId },
+    });
+
+    this.socket.emitOfficerChatDeleted(messageId);
+
+    return true;
   }
 }
 

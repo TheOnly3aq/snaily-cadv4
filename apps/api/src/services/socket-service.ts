@@ -211,4 +211,8 @@ export class Socket {
   emitOfficerChat(chat: any) {
     this.io.sockets.emit(SocketEvents.OfficerChat, chat);
   }
+
+  emitOfficerChatDeleted(messageId: string) {
+    this.io.sockets.emit(SocketEvents.OfficerChatDeleted, messageId);
+  }
 }

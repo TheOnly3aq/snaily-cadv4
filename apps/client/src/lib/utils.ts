@@ -114,6 +114,29 @@ export function formatOfficerDepartment(unit: Officer | EmsFdDeputy) {
 }
 
 /**
+ * Generates an abbreviation from a department name by taking the first letter of each word.
+ * @example "Los Santos Police Department" => "LSPD"
+ * @example "Blaine County Sheriffs Office" => "BCSO"
+ * @param departmentName - The full department name
+ * @returns The abbreviation in uppercase, or null if the name is empty/null/undefined
+ */
+export function getDepartmentAbbreviation(
+  departmentName: string | null | undefined,
+): string | null {
+  if (!departmentName?.trim()) {
+    return null;
+  }
+  const words = departmentName.trim().split(/\s+/);
+  const abbreviation = words
+    .map((word) => word.charAt(0))
+    .filter((char) => char.length > 0)
+    .join("")
+    .toUpperCase();
+
+  return abbreviation || null;
+}
+
+/**
  * Check if a user can use third party connections. It will check if the user is inside of an iframe.
  * @returns {boolean}
  */

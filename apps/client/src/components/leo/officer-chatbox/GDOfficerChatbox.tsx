@@ -1,17 +1,30 @@
 import * as React from "react";
-import { Button, TextField, Loader } from "@snailycad/ui";
+import {
+  Button,
+  TextField,
+  Loader,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@snailycad/ui";
 import { Form, Formik, type FormikHelpers } from "formik";
 import { useTranslations } from "use-intl";
 import { useQuery } from "@tanstack/react-query";
 import useFetch from "lib/useFetch";
 import { useGenerateCallsign } from "hooks/useGenerateCallsign";
-import { makeUnitName } from "lib/utils";
+import {
+  formatUnitDivisions,
+  getDepartmentAbbreviation,
+  getUnitDepartment,
+  makeUnitName,
+} from "lib/utils";
 import { SocketEvents } from "@snailycad/config";
 import { useListener } from "@casperiv/use-socket.io";
-import { ChevronDown, ChatSquare } from "react-bootstrap-icons";
+import { ChevronDown, ChatSquare, Trash } from "react-bootstrap-icons";
 import { cn } from "mxcn";
 import { useLeoState } from "state/leo-state";
 import { ShouldDoType } from "@snailycad/types";
+import { isUnitOfficer } from "@snailycad/utils/typeguards";
 
 interface OfficerChatMessage {
   id: string;
@@ -69,12 +82,20 @@ export function GDOfficerChatbox() {
     [isOfficerOnDuty],
   );
 
+  useListener(
+    SocketEvents.OfficerChatDeleted,
+    (messageId: string) => {
+      if (!isOfficerOnDuty) return;
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    },
+    [isOfficerOnDuty],
+  );
+
   React.useEffect(() => {
     if (!isOfficerOnDuty) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOfficerOnDuty]);
 
-  // Don't render if officer is not on duty
   if (!isOfficerOnDuty) {
     return null;
   }
@@ -95,19 +116,38 @@ export function GDOfficerChatbox() {
     }
   }
 
-  // allow users to press "Enter + Ctrl" or "Enter + Cmd" to send
   function handleCtrlEnter(event: React.KeyboardEvent<HTMLTextAreaElement>, submitForm: any) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       submitForm();
     }
   }
 
+  async function handleDeleteMessage(messageId: string) {
+    const { json } = await execute({
+      path: `/leo/officer-chat/${messageId}`,
+      method: "DELETE",
+    });
+
+    if (json) {
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    }
+  }
+
+  function isOwnMessage(message: OfficerChatMessage): boolean {
+    if (!activeOfficer || !message.creator.unit) return false;
+
+    const messageUnitId = message.creator.unit.id;
+    const currentUnitId = activeOfficer.id;
+
+    return messageUnitId === currentUnitId;
+  }
+
   if (isMinimized) {
     return (
       <button
         type="button"
-        onClick={() => setIsMinimized(false)}
-        className="fixed bottom-4 right-4 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-colors"
+        onClick={() => setIsMinimized(true)}
+        className="fixed bottom-4 right-4 z-50 bg-blue-900 hover:bg-blue-800 text-white rounded-full p-4 shadow-lg transition-colors"
         aria-label="Open officer chat"
       >
         <ChatSquare className="w-6 h-6" />
@@ -159,19 +199,88 @@ export function GDOfficerChatbox() {
             const templateId = isCombinedUnit ? "pairedUnitTemplate" : "callsignTemplate";
             const callsign = generateCallsign(unit, templateId);
             const unitName = makeUnitName(unit);
+            const departmentObj = getUnitDepartment(unit);
+            const departmentName = departmentObj?.value.value ?? "";
+            const departmentCallsign = getDepartmentAbbreviation(departmentName);
+            const divisions = isUnitOfficer(unit) ? formatUnitDivisions(unit) : null;
+            const rank = isUnitOfficer(unit) ? unit.rank?.value : null;
+            const status = unit.status?.value.value ?? null;
+            const isOwn = isOwnMessage(message);
 
             return (
               <div
                 key={message.id}
-                className="bg-gray-100 dark:bg-secondary rounded-lg p-2 break-words"
+                className={cn(
+                  "rounded-lg p-2 break-words relative group",
+                  isOwn ? "bg-blue-900 dark:bg-blue-900" : "bg-gray-100 dark:bg-secondary",
+                )}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-sm text-gray-500 dark:text-white">
-                    {callsign} {unitName}
-                  </span>
+                  {!isOwn ? (
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <span className="font-semibold text-sm text-gray-500 dark:text-white cursor-help">
+                          {callsign} {unitName} ({departmentCallsign})
+                        </span>
+                      </HoverCardTrigger>
+                      <HoverCardContent pointerEvents className="max-w-[300px]">
+                        <div className="space-y-1 text-sm">
+                          {departmentCallsign && (
+                            <div>
+                              <span className="font-semibold">{t("department")}:</span>{" "}
+                              <span>{departmentCallsign}</span>
+                              {departmentName !== departmentCallsign && (
+                                <span className="text-gray-500 dark:text-gray-400 ml-1">
+                                  ({departmentName})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {!departmentCallsign && departmentName && (
+                            <div>
+                              <span className="font-semibold">{t("department")}:</span>{" "}
+                              <span>{departmentName}</span>
+                            </div>
+                          )}
+                          {divisions && (
+                            <div>
+                              <span className="font-semibold">{t("division")}:</span>{" "}
+                              <span>{divisions}</span>
+                            </div>
+                          )}
+                          {rank && (
+                            <div>
+                              <span className="font-semibold">{t("rank")}:</span>{" "}
+                              <span>{rank}</span>
+                            </div>
+                          )}
+                          {status && (
+                            <div>
+                              <span className="font-semibold">{t("status")}:</span>{" "}
+                              <span>{status}</span>
+                            </div>
+                          )}
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  ) : (
+                    <span className="font-semibold text-sm text-gray-500 dark:text-white">
+                      {callsign} {unitName} ({departmentCallsign})
+                    </span>
+                  )}
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(message.createdAt).toLocaleTimeString()}
                   </span>
+                  {isOwn && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteMessage(message.id)}
+                      className="ml-auto p-1 hover:bg-red-500 dark:hover:bg-red-600 text-gray-500 dark:text-gray-400 hover:text-white rounded transition-colors opacity-0 group-hover:opacity-100"
+                      aria-label="Delete message"
+                    >
+                      <Trash className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
                 <p className="text-sm text-gray-500 dark:text-white">{message.message}</p>
               </div>

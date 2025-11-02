@@ -22,6 +22,7 @@ export enum SocketEvents {
   SetUnitOffDuty = "SetUnitOffDuty",
   UpdateUnitStatus = "UpdateUnitStatus",
   OfficerChat = "OfficerChat",
+  OfficerChatDeleted = "OfficerChatDeleted",
 
   UserBanned = "UserBanned",
   UserDeleted = "UserDeleted",
