@@ -41,7 +41,7 @@ const INITIAL_VALUES = {
 };
 
 export function GDOfficerChatbox() {
-  const [isMinimized, setIsMinimized] = React.useState(false);
+  const [isMinimized, setIsMinimized] = React.useState(true);
   const [messages, setMessages] = React.useState<OfficerChatMessage[]>([]);
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
   const { execute, state } = useFetch();
@@ -173,7 +173,7 @@ export function GDOfficerChatbox() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsMinimized(true)}
+            onClick={() => setIsMinimized(false)}
             className="p-1 hover:bg-gray-200 dark:hover:bg-secondary text-gray-500 dark:text-white rounded transition-colors"
             aria-label="Minimize chat"
           >
