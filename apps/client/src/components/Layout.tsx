@@ -18,7 +18,7 @@ const SocketErrorComponent = dynamic(
 );
 
 const GDOfficerChatbox = dynamic(
-  async () => (await import("components/leo/officer-chatbox/GDOfficerChatbox")).GDOfficerChatbox,
+  async () => (await import("components/leo/officer-chatboxx/GDOfficerChatbox")).GDOfficerChatbox,
   { ssr: false },
 );
 
