@@ -146,7 +146,7 @@ export function GDOfficerChatbox() {
     return (
       <button
         type="button"
-        onClick={() => setIsMinimized(true)}
+        onClick={() => setIsMinimized(false)}
         className="fixed bottom-4 right-4 z-50 bg-blue-900 hover:bg-blue-800 text-white rounded-full p-4 shadow-lg transition-colors"
         aria-label="Open officer chat"
       >
@@ -173,7 +173,7 @@ export function GDOfficerChatbox() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsMinimized(false)}
+            onClick={() => setIsMinimized(true)}
             className="p-1 hover:bg-gray-200 dark:hover:bg-secondary text-gray-500 dark:text-white rounded transition-colors"
             aria-label="Minimize chat"
           >
